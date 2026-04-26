@@ -471,6 +471,231 @@ const Index = () => {
       ctx.restore();
     };
 
+    const drawCar = (ctx: CanvasRenderingContext2D, w: number, h: number, t: number) => {
+      const groundY = h * 0.75;
+      // Car moves left-to-right, loops
+      const speed = 0.04;
+      const cycle = (w + 300);
+      const carX = ((t * speed) % cycle) - 150;
+      const carY = groundY - 2;
+
+      const cw = 110; // car width
+      const ch = 44;  // car height
+      const cx = carX;
+      const cy = carY - ch;
+
+      ctx.save();
+
+      // --- Headlight beams (cast forward) ---
+      const beamGrad = ctx.createLinearGradient(cx + cw, cy + ch * 0.6, cx + cw + 200, cy + ch * 0.6);
+      beamGrad.addColorStop(0, "rgba(255,240,180,0.18)");
+      beamGrad.addColorStop(1, "rgba(255,240,180,0)");
+      ctx.fillStyle = beamGrad;
+      ctx.beginPath();
+      ctx.moveTo(cx + cw, cy + ch * 0.45);
+      ctx.lineTo(cx + cw + 220, cy + ch * 0.2);
+      ctx.lineTo(cx + cw + 220, cy + ch * 0.9);
+      ctx.lineTo(cx + cw, cy + ch * 0.75);
+      ctx.closePath();
+      ctx.fill();
+
+      // Road glow under headlights
+      ctx.save();
+      ctx.globalAlpha = 0.13;
+      const roadBeam = ctx.createRadialGradient(cx + cw + 80, groundY, 0, cx + cw + 80, groundY, 130);
+      roadBeam.addColorStop(0, "#ffe8a0");
+      roadBeam.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = roadBeam;
+      ctx.fillRect(cx + cw, groundY - 10, 260, 40);
+      ctx.restore();
+
+      // --- Car reflection in wet road ---
+      ctx.save();
+      ctx.globalAlpha = 0.18;
+      ctx.scale(1, -0.35);
+      const reflY = -(groundY + 6);
+      // body reflection
+      const refGrad = ctx.createLinearGradient(cx, reflY - ch, cx + cw, reflY - ch);
+      refGrad.addColorStop(0, "#cc1111");
+      refGrad.addColorStop(0.5, "#ff2222");
+      refGrad.addColorStop(1, "#aa0000");
+      ctx.fillStyle = refGrad;
+      ctx.beginPath();
+      ctx.roundRect(cx + 8, reflY - ch * 0.85, cw - 16, ch * 0.85, 4);
+      ctx.fill();
+      ctx.restore();
+
+      // --- Shadow under car ---
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      const shadowGrad = ctx.createRadialGradient(cx + cw / 2, groundY, 0, cx + cw / 2, groundY, cw * 0.6);
+      shadowGrad.addColorStop(0, "rgba(0,0,0,0.7)");
+      shadowGrad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = shadowGrad;
+      ctx.ellipse(cx + cw / 2, groundY + 2, cw * 0.55, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // --- Body main ---
+      const bodyGrad = ctx.createLinearGradient(cx, cy, cx, cy + ch);
+      bodyGrad.addColorStop(0, "#ff2a2a");
+      bodyGrad.addColorStop(0.3, "#cc0000");
+      bodyGrad.addColorStop(0.7, "#990000");
+      bodyGrad.addColorStop(1, "#660000");
+      ctx.fillStyle = bodyGrad;
+      ctx.beginPath();
+      ctx.roundRect(cx + 4, cy + ch * 0.38, cw - 8, ch * 0.62, [0, 0, 5, 5]);
+      ctx.fill();
+
+      // --- Roof / cabin ---
+      ctx.fillStyle = "#cc1111";
+      ctx.beginPath();
+      ctx.moveTo(cx + 18, cy + ch * 0.38);
+      ctx.lineTo(cx + 26, cy + 4);
+      ctx.lineTo(cx + cw - 22, cy + 4);
+      ctx.lineTo(cx + cw - 10, cy + ch * 0.38);
+      ctx.closePath();
+      ctx.fill();
+
+      // Roof highlight
+      const roofHL = ctx.createLinearGradient(cx + 18, cy + 4, cx + 18, cy + ch * 0.38);
+      roofHL.addColorStop(0, "rgba(255,100,100,0.5)");
+      roofHL.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = roofHL;
+      ctx.beginPath();
+      ctx.moveTo(cx + 18, cy + ch * 0.38);
+      ctx.lineTo(cx + 26, cy + 4);
+      ctx.lineTo(cx + cw - 22, cy + 4);
+      ctx.lineTo(cx + cw - 10, cy + ch * 0.38);
+      ctx.closePath();
+      ctx.fill();
+
+      // --- Windows ---
+      ctx.fillStyle = "rgba(30,60,120,0.75)";
+      // front window
+      ctx.beginPath();
+      ctx.moveTo(cx + cw - 22, cy + 7);
+      ctx.lineTo(cx + cw - 11, cy + ch * 0.37);
+      ctx.lineTo(cx + cw * 0.58, cy + ch * 0.37);
+      ctx.lineTo(cx + cw * 0.58, cy + 7);
+      ctx.closePath();
+      ctx.fill();
+      // rear window
+      ctx.beginPath();
+      ctx.moveTo(cx + 26, cy + 7);
+      ctx.lineTo(cx + cw * 0.42, cy + 7);
+      ctx.lineTo(cx + cw * 0.42, cy + ch * 0.37);
+      ctx.lineTo(cx + 19, cy + ch * 0.37);
+      ctx.closePath();
+      ctx.fill();
+
+      // Window glare
+      ctx.fillStyle = "rgba(200,220,255,0.12)";
+      ctx.beginPath();
+      ctx.moveTo(cx + cw - 20, cy + 8);
+      ctx.lineTo(cx + cw - 14, cy + 8);
+      ctx.lineTo(cx + cw * 0.64, cy + ch * 0.35);
+      ctx.lineTo(cx + cw * 0.58, cy + ch * 0.35);
+      ctx.closePath();
+      ctx.fill();
+
+      // --- Body highlight (roof edge shine) ---
+      ctx.strokeStyle = "rgba(255,100,100,0.6)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(cx + 8, cy + ch * 0.38);
+      ctx.lineTo(cx + cw - 8, cy + ch * 0.38);
+      ctx.stroke();
+
+      // --- Wheels ---
+      const wheelY = cy + ch;
+      const wheelR = 13;
+      [[cx + 22, wheelY], [cx + cw - 22, wheelY]].forEach(([wx, wy]) => {
+        // Tire
+        ctx.fillStyle = "#111";
+        ctx.beginPath();
+        ctx.arc(wx, wy, wheelR, 0, Math.PI * 2);
+        ctx.fill();
+        // Rim
+        ctx.strokeStyle = "#777";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(wx, wy, wheelR - 3, 0, Math.PI * 2);
+        ctx.stroke();
+        // Hub
+        ctx.fillStyle = "#aaa";
+        ctx.beginPath();
+        ctx.arc(wx, wy, 4, 0, Math.PI * 2);
+        ctx.fill();
+        // Spokes (rotating)
+        const rot = (t * 0.008) % (Math.PI * 2);
+        ctx.strokeStyle = "#888";
+        ctx.lineWidth = 1.2;
+        for (let s = 0; s < 5; s++) {
+          const angle = rot + (s / 5) * Math.PI * 2;
+          ctx.beginPath();
+          ctx.moveTo(wx + Math.cos(angle) * 4, wy + Math.sin(angle) * 4);
+          ctx.lineTo(wx + Math.cos(angle) * (wheelR - 3), wy + Math.sin(angle) * (wheelR - 3));
+          ctx.stroke();
+        }
+      });
+
+      // --- Headlights (front) ---
+      ctx.save();
+      ctx.shadowColor = "#ffe8a0";
+      ctx.shadowBlur = 18;
+      ctx.fillStyle = "#fff8d0";
+      ctx.beginPath();
+      ctx.roundRect(cx + cw - 9, cy + ch * 0.42, 9, 10, 2);
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,240,160,0.5)";
+      ctx.beginPath();
+      ctx.roundRect(cx + cw - 9, cy + ch * 0.55, 9, 7, 1);
+      ctx.fill();
+      ctx.restore();
+
+      // --- Tail lights (rear) ---
+      const tailFlicker = 0.85 + Math.sin(t * 0.003) * 0.15;
+      ctx.save();
+      ctx.shadowColor = "#ff0000";
+      ctx.shadowBlur = 14;
+      ctx.globalAlpha = tailFlicker;
+      ctx.fillStyle = "#ff2200";
+      ctx.beginPath();
+      ctx.roundRect(cx, cy + ch * 0.42, 9, 10, 2);
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,50,0,0.4)";
+      ctx.beginPath();
+      ctx.roundRect(cx, cy + ch * 0.55, 9, 7, 1);
+      ctx.fill();
+      ctx.restore();
+
+      // --- Exhaust particles ---
+      if (Math.random() > 0.6) {
+        const ex = cx + 10 + (Math.random() - 0.5) * 4;
+        const ey = cy + ch * 0.9 + (Math.random() - 0.5) * 3;
+        ctx.save();
+        ctx.globalAlpha = 0.12 + Math.random() * 0.1;
+        ctx.fillStyle = "#aaaacc";
+        ctx.beginPath();
+        ctx.arc(ex, ey, 3 + Math.random() * 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // --- VAZ badge ---
+      ctx.save();
+      ctx.globalAlpha = 0.7;
+      ctx.font = "bold 7px Orbitron, monospace";
+      ctx.fillStyle = "#ffcc88";
+      ctx.shadowColor = "#ff4400";
+      ctx.shadowBlur = 6;
+      ctx.fillText("ВАЗ-2114", cx + cw * 0.3, cy + ch * 0.3);
+      ctx.restore();
+
+      ctx.restore();
+    };
+
     const loop = (timestamp: number) => {
       const t = timestamp;
       timeRef.current = t;
@@ -490,6 +715,7 @@ const Index = () => {
       const sorted = [...buildingsRef.current].sort((a, b) => a.tier - b.tier);
       sorted.forEach((b) => drawBuilding(ctx, b, h, t));
 
+      drawCar(ctx, w, h, t);
       drawRain(ctx, w, h);
       drawParticles(ctx);
       drawAtmosphere(ctx, w, h, t);
