@@ -471,6 +471,325 @@ const Index = () => {
       ctx.restore();
     };
 
+    const drawOncomingCar = (ctx: CanvasRenderingContext2D, w: number, h: number, t: number) => {
+      const groundY = h * 0.75;
+      const speed = 0.055;
+      const cycle = w + 300;
+      // starts from right, goes left — offset by half cycle so they don't always meet in center
+      const carX = w + 150 - ((t * speed + cycle * 0.6) % cycle);
+      const cw = 100;
+      const ch = 42;
+      const cx = carX;
+      const cy = groundY - 2 - ch;
+      // slight lane offset — oncoming is slightly closer to camera (lower y)
+      const laneOff = 18;
+
+      ctx.save();
+      ctx.translate(0, laneOff);
+
+      // Headlight beams (cast to the LEFT)
+      const beamGrad = ctx.createLinearGradient(cx, cy + ch * 0.6, cx - 200, cy + ch * 0.6);
+      beamGrad.addColorStop(0, "rgba(255,240,180,0.16)");
+      beamGrad.addColorStop(1, "rgba(255,240,180,0)");
+      ctx.fillStyle = beamGrad;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + ch * 0.45);
+      ctx.lineTo(cx - 220, cy + ch * 0.2);
+      ctx.lineTo(cx - 220, cy + ch * 0.9);
+      ctx.lineTo(cx, cy + ch * 0.75);
+      ctx.closePath();
+      ctx.fill();
+
+      // Road glow under headlights
+      ctx.save();
+      ctx.globalAlpha = 0.12;
+      const roadBeam = ctx.createRadialGradient(cx - 80, groundY + laneOff, 0, cx - 80, groundY + laneOff, 120);
+      roadBeam.addColorStop(0, "#ffe8a0");
+      roadBeam.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = roadBeam;
+      ctx.fillRect(cx - 260, groundY + laneOff - 10, 260, 40);
+      ctx.restore();
+
+      // Shadow
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      const shadowGrad = ctx.createRadialGradient(cx + cw / 2, groundY + laneOff, 0, cx + cw / 2, groundY + laneOff, cw * 0.55);
+      shadowGrad.addColorStop(0, "rgba(0,0,0,0.7)");
+      shadowGrad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = shadowGrad;
+      ctx.ellipse(cx + cw / 2, groundY + laneOff + 2, cw * 0.5, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Body — dark silver/grey
+      const bodyGrad = ctx.createLinearGradient(cx, cy, cx, cy + ch);
+      bodyGrad.addColorStop(0, "#5a5a6a");
+      bodyGrad.addColorStop(0.35, "#3a3a4a");
+      bodyGrad.addColorStop(0.7, "#252530");
+      bodyGrad.addColorStop(1, "#181820");
+      ctx.fillStyle = bodyGrad;
+      ctx.beginPath();
+      ctx.roundRect(cx + 4, cy + ch * 0.38, cw - 8, ch * 0.62, [0, 0, 5, 5]);
+      ctx.fill();
+
+      // Roof / cabin
+      ctx.fillStyle = "#3a3a4a";
+      ctx.beginPath();
+      ctx.moveTo(cx + 16, cy + ch * 0.38);
+      ctx.lineTo(cx + 24, cy + 5);
+      ctx.lineTo(cx + cw - 20, cy + 5);
+      ctx.lineTo(cx + cw - 12, cy + ch * 0.38);
+      ctx.closePath();
+      ctx.fill();
+
+      // Roof highlight
+      const roofHL = ctx.createLinearGradient(cx, cy + 5, cx, cy + ch * 0.38);
+      roofHL.addColorStop(0, "rgba(180,180,220,0.3)");
+      roofHL.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = roofHL;
+      ctx.beginPath();
+      ctx.moveTo(cx + 16, cy + ch * 0.38);
+      ctx.lineTo(cx + 24, cy + 5);
+      ctx.lineTo(cx + cw - 20, cy + 5);
+      ctx.lineTo(cx + cw - 12, cy + ch * 0.38);
+      ctx.closePath();
+      ctx.fill();
+
+      // Windows
+      ctx.fillStyle = "rgba(20,40,100,0.8)";
+      // front (left side since car faces left)
+      ctx.beginPath();
+      ctx.moveTo(cx + 16, cy + 7);
+      ctx.lineTo(cx + cw * 0.42, cy + 7);
+      ctx.lineTo(cx + cw * 0.42, cy + ch * 0.37);
+      ctx.lineTo(cx + 17, cy + ch * 0.37);
+      ctx.closePath();
+      ctx.fill();
+      // rear
+      ctx.beginPath();
+      ctx.moveTo(cx + cw * 0.58, cy + 7);
+      ctx.lineTo(cx + cw - 14, cy + 7);
+      ctx.lineTo(cx + cw - 10, cy + ch * 0.37);
+      ctx.lineTo(cx + cw * 0.58, cy + ch * 0.37);
+      ctx.closePath();
+      ctx.fill();
+
+      // Body shine
+      ctx.strokeStyle = "rgba(150,150,180,0.4)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(cx + 8, cy + ch * 0.38);
+      ctx.lineTo(cx + cw - 8, cy + ch * 0.38);
+      ctx.stroke();
+
+      // Wheels
+      const wheelY = cy + ch;
+      [[cx + 20, wheelY], [cx + cw - 20, wheelY]].forEach(([wx, wy]) => {
+        ctx.fillStyle = "#0d0d0d";
+        ctx.beginPath();
+        ctx.arc(wx, wy, 13, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#666";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(wx, wy, 10, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = "#999";
+        ctx.beginPath();
+        ctx.arc(wx, wy, 4, 0, Math.PI * 2);
+        ctx.fill();
+        const rot = -(t * 0.009) % (Math.PI * 2);
+        ctx.strokeStyle = "#777";
+        ctx.lineWidth = 1.2;
+        for (let s = 0; s < 5; s++) {
+          const angle = rot + (s / 5) * Math.PI * 2;
+          ctx.beginPath();
+          ctx.moveTo(wx + Math.cos(angle) * 4, wy + Math.sin(angle) * 4);
+          ctx.lineTo(wx + Math.cos(angle) * 10, wy + Math.sin(angle) * 10);
+          ctx.stroke();
+        }
+      });
+
+      // Headlights (left side)
+      ctx.save();
+      ctx.shadowColor = "#ffe8a0";
+      ctx.shadowBlur = 18;
+      ctx.fillStyle = "#fff8d0";
+      ctx.beginPath();
+      ctx.roundRect(cx, cy + ch * 0.42, 9, 10, 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Tail lights (right side)
+      const tailFlicker = 0.85 + Math.sin(t * 0.0025 + 1.2) * 0.15;
+      ctx.save();
+      ctx.shadowColor = "#ff0000";
+      ctx.shadowBlur = 12;
+      ctx.globalAlpha = tailFlicker;
+      ctx.fillStyle = "#ff2200";
+      ctx.beginPath();
+      ctx.roundRect(cx + cw - 9, cy + ch * 0.42, 9, 10, 2);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.restore();
+    };
+
+    const drawPedestrians = (ctx: CanvasRenderingContext2D, w: number, h: number, t: number) => {
+      const groundY = h * 0.75;
+      // Sidewalk is just above ground level, slightly in front of buildings
+      const sidewalkY = groundY - 6;
+
+      // Define 4 pedestrians with different speeds, phases and neon accent colors
+      const peds = [
+        { speed: 0.018, phase: 0,          lane: 0,    color: "#00ffff", dir: 1  },
+        { speed: 0.012, phase: w * 0.3,    lane: -22,  color: "#ff00ff", dir: 1  },
+        { speed: 0.022, phase: w * 0.55,   lane: -10,  color: "#00ff88", dir: -1 },
+        { speed: 0.015, phase: w * 0.75,   lane: -16,  color: "#ff0080", dir: -1 },
+      ];
+
+      peds.forEach((ped) => {
+        const cycle = w + 160;
+        let px: number;
+        if (ped.dir === 1) {
+          px = ((t * ped.speed + ped.phase) % cycle) - 80;
+        } else {
+          px = w + 80 - ((t * ped.speed + ped.phase) % cycle);
+        }
+        const py = sidewalkY + ped.lane;
+        const scale = 0.7 + (ped.lane + 22) / 80; // farther = smaller
+
+        // Walk cycle
+        const walkCycle = Math.sin(t * 0.008 * ped.speed * 60 + ped.phase * 0.01);
+        const legSwing = walkCycle * 6 * scale;
+        const armSwing = -walkCycle * 5 * scale;
+        const bobY = Math.abs(walkCycle) * 2 * scale;
+
+        const ph = 36 * scale; // person height
+        const hw = 6 * scale;  // half width
+
+        ctx.save();
+        ctx.globalAlpha = 0.82 * scale;
+
+        // Neon glow from clothing/umbrella
+        ctx.shadowColor = ped.color;
+        ctx.shadowBlur = 8;
+
+        // --- Legs ---
+        ctx.strokeStyle = "#222";
+        ctx.lineWidth = 3 * scale;
+        ctx.lineCap = "round";
+        // Left leg
+        ctx.beginPath();
+        ctx.moveTo(px, py - ph * 0.35 - bobY);
+        ctx.lineTo(px - hw * 0.5 + legSwing, py - bobY);
+        ctx.stroke();
+        // Right leg
+        ctx.beginPath();
+        ctx.moveTo(px, py - ph * 0.35 - bobY);
+        ctx.lineTo(px + hw * 0.5 - legSwing, py - bobY);
+        ctx.stroke();
+
+        // Shoe glow accents
+        ctx.shadowBlur = 6;
+        ctx.strokeStyle = ped.color;
+        ctx.lineWidth = 1.5 * scale;
+        ctx.beginPath();
+        ctx.moveTo(px - hw * 0.5 + legSwing, py - bobY);
+        ctx.lineTo(px - hw * 0.5 + legSwing - 3 * scale * ped.dir, py - bobY + 1);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(px + hw * 0.5 - legSwing, py - bobY);
+        ctx.lineTo(px + hw * 0.5 - legSwing + 3 * scale * ped.dir, py - bobY + 1);
+        ctx.stroke();
+
+        // --- Body (jacket) ---
+        ctx.shadowBlur = 0;
+        const bodyGrad = ctx.createLinearGradient(px - hw, py - ph * 0.82 - bobY, px + hw, py - ph * 0.35 - bobY);
+        bodyGrad.addColorStop(0, "#1a1a2a");
+        bodyGrad.addColorStop(1, "#0d0d18");
+        ctx.fillStyle = bodyGrad;
+        ctx.beginPath();
+        ctx.roundRect(px - hw, py - ph * 0.82 - bobY, hw * 2, ph * 0.47, 3 * scale);
+        ctx.fill();
+
+        // Neon jacket stripe
+        ctx.shadowColor = ped.color;
+        ctx.shadowBlur = 10;
+        ctx.strokeStyle = ped.color;
+        ctx.lineWidth = 1.2 * scale;
+        ctx.beginPath();
+        ctx.moveTo(px - hw + 2 * scale, py - ph * 0.78 - bobY);
+        ctx.lineTo(px - hw + 2 * scale, py - ph * 0.38 - bobY);
+        ctx.stroke();
+
+        // --- Arms ---
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = "#1a1a2a";
+        ctx.lineWidth = 2.5 * scale;
+        // Left arm
+        ctx.beginPath();
+        ctx.moveTo(px - hw * 0.8, py - ph * 0.72 - bobY);
+        ctx.lineTo(px - hw * 1.6 + armSwing, py - ph * 0.48 - bobY);
+        ctx.stroke();
+        // Right arm
+        ctx.beginPath();
+        ctx.moveTo(px + hw * 0.8, py - ph * 0.72 - bobY);
+        ctx.lineTo(px + hw * 1.6 - armSwing, py - ph * 0.48 - bobY);
+        ctx.stroke();
+
+        // --- Head ---
+        ctx.shadowColor = ped.color;
+        ctx.shadowBlur = 12;
+        ctx.fillStyle = "#c8a882";
+        ctx.beginPath();
+        ctx.arc(px, py - ph * 0.9 - bobY, 5.5 * scale, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Hood / hat
+        ctx.fillStyle = "#111122";
+        ctx.beginPath();
+        ctx.ellipse(px, py - ph * 0.94 - bobY, 6 * scale, 4 * scale, 0, Math.PI, 0);
+        ctx.fill();
+
+        // --- Umbrella (only 2 peds have one) ---
+        if (ped.phase === 0 || ped.phase === w * 0.55) {
+          ctx.shadowColor = ped.color;
+          ctx.shadowBlur = 14;
+          // Handle
+          ctx.strokeStyle = "#555";
+          ctx.lineWidth = 1.5 * scale;
+          ctx.beginPath();
+          ctx.moveTo(px + hw * 0.8, py - ph * 0.82 - bobY);
+          ctx.lineTo(px + hw * 0.8, py - ph * 1.2 - bobY);
+          ctx.stroke();
+          // Canopy
+          ctx.fillStyle = ped.color;
+          ctx.globalAlpha = 0.25;
+          ctx.beginPath();
+          ctx.ellipse(px + hw * 0.8, py - ph * 1.2 - bobY, 14 * scale, 5 * scale, 0, Math.PI, 0);
+          ctx.fill();
+          ctx.globalAlpha = 0.82 * scale;
+          ctx.strokeStyle = ped.color;
+          ctx.lineWidth = 1 * scale;
+          ctx.beginPath();
+          ctx.ellipse(px + hw * 0.8, py - ph * 1.2 - bobY, 14 * scale, 5 * scale, 0, Math.PI, 0);
+          ctx.stroke();
+        }
+
+        // Puddle splash under feet
+        ctx.save();
+        ctx.globalAlpha = 0.07 + Math.abs(walkCycle) * 0.05;
+        ctx.fillStyle = ped.color;
+        ctx.beginPath();
+        ctx.ellipse(px, py + 1, 10 * scale, 2.5 * scale, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.restore();
+      });
+    };
+
     const drawCar = (ctx: CanvasRenderingContext2D, w: number, h: number, t: number) => {
       const groundY = h * 0.75;
       // Car moves left-to-right, loops
@@ -716,6 +1035,8 @@ const Index = () => {
       sorted.forEach((b) => drawBuilding(ctx, b, h, t));
 
       drawCar(ctx, w, h, t);
+      drawOncomingCar(ctx, w, h, t);
+      drawPedestrians(ctx, w, h, t);
       drawRain(ctx, w, h);
       drawParticles(ctx);
       drawAtmosphere(ctx, w, h, t);
